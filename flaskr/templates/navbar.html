@@ -1,0 +1,35 @@
+<div class="container">
+    <nav :class="['navbar', 'is-active']" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="/">
+                <span class="is-size-3">Movies Recommender System</span>
+            </a>
+
+            <a role="button" :class="['navbar-burger', isActivityNavBar ? 'is-active' : '']" aria-label="menu"
+               aria-expanded="false"
+               data-target="navbarBasicExample" @click="isActivityNavBar = !isActivityNavBar">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
+        </div>
+
+        <div id="navbarBasicExample" :class="['navbar-menu', isActivityNavBar ? 'is-active' : '']">
+            <div class="navbar-start">
+            </div>
+            <div class="navbar-end">
+                <div class="navbar-item">
+                    <div class="buttons">
+                        <button class="button is-danger" @click="cleanAll">
+                            <strong>Clan All</strong>
+                        </button>
+
+                        <button class="button is-link" @click="showGenres = true">
+                            <strong>Genres</strong>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+</div>

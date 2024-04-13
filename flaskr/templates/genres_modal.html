@@ -1,0 +1,21 @@
+<div :class="['modal', showGenres ? 'is-active' : '']">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">Please choose any genre you're interested in.</p>
+        </header>
+        <div class="modal-card-body">
+            <p class="mb-3">Multiple answers are possible.</p>
+            {% for gener in genres %}
+            <button :class="['button m-2', inGenres({{gener['id']}}) ? 'is-link' : '' ]" value="{{gener['id']}}"
+                    @click="updateGenre({{gener['id']}})">
+                {{gener['name']}}
+            </button>
+            {% endfor %}
+        </div>
+        <footer class="modal-card-foot">
+            <button class="button is-link" :disabled="genres.length == 0" @click="saveGenres">Save
+            </button>
+        </footer>
+    </div>
+</div>

@@ -1,0 +1,39 @@
+<section class="section pb-0">
+    <div class="container">
+        <p class="is-size-4">
+            Liked with Similar Items
+        </p>
+        <p class="mb-3">{{ likes_similar_message }}</p>
+
+        <div class="columns is-mobile is-multiline">
+            {% for movie in likes_similars %}
+            <div class="column is-2-fullhd is-2-desktop is-2-tablet is-6-mobile">
+                <div class="card">
+                    <div class="card-image">
+                        <figure class="image is-3by4">
+                            <img src="{{ movie['cover_url'] }}"
+                                 onerror="this.src='https://placehold.co/480x640?text=No+Cover';"
+                                 alt="">
+                        </figure>
+                    </div>
+                    <div class="card-content p-2">
+                        <div class="media">
+                            <div class="media-content">
+                                <p style="font-size: 0.8rem; font-weight: bold">{{ movie['title']
+                                    }}</p>
+                                <p style="font-size: 0.8rem">{{ movie['year'] }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-footer p-2">
+                        <button class="button is-small" @click="updateLike({{movie['movieId']}})">
+                            <span :class="['fa fa-heart', inLikes({{movie['movieId']}}) ? 'checked': '']" > Like</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>

@@ -1,0 +1,45 @@
+<div :class="['modal', showMovieRate ? 'is-active' : '']">
+    <div class="modal-background"></div>
+    <div class="modal-card" style="max-width: 1000px">
+        <header class="modal-card-head">
+            <p class="modal-card-title">Please rate the following movies.</p>
+        </header>
+        <div class="modal-card-body">
+            <div class="columns is-mobile is-multiline">
+                {% for movie in default_genres_movies %}
+                <div class="column is-3-fullhd is-3-desktop is-3-tablet is-6-mobile">
+                    <div class="card">
+                        <div class="card-image">
+                            <figure class="image is-3by4">
+                                <img src="{{ movie['cover_url'] }}"
+                                     onerror="this.src='https://placehold.co/480x640?text=No+Cover';" alt="">
+                            </figure>
+                        </div>
+                        <div class="card-content p-2">
+                            <div class="media">
+                                <div class="media-content">
+                                    <p style="font-size: 0.8rem; font-weight: bold">{{ movie['title']
+                                        }}</p>
+                                    <p style="font-size: 0.8rem">{{ movie['year'] }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer p-2">
+                            <template v-for="rate in [1, 2, 3, 4, 5]">
+                                <span :class="['fa fa-star px-1 star', getRate({{movie['movieId']}})[1] >= rate ? 'checked': '']"
+                                      @click="updateRate({{movie['movieId']}}, rate)"></span>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <footer class="modal-card-foot">
+            <button class="button is-link" :disabled="userRates.length == 0"
+                    @click="showMovieRate = false; reloadPage()">Save
+            </button>
+        </footer>
+    </div>
+</div>
