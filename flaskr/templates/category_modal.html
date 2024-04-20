@@ -1,0 +1,48 @@
+<div :class="['modal', showCategory ? 'is-active' : '']">
+    <div class="modal-background"></div>
+    <div class="modal-card overflow-scroll">
+        <header class="modal-card-head">
+            <p class="modal-card-title">Please choose any category you're interested in.</p>
+        </header>
+        <div class="modal-card-body">
+            <p class="mb-3">Multiple answers are possible.</p>
+            {% for categor in category %}
+            <button :class="['button m-2', inCategory({{categor['id']}}) ? 'is-link' : '' ]" value="{{categor['id']}}"
+                    @click="updateCategory({{categor['id']}})">
+                {{categor['name']}}
+            </button>
+            {% endfor %}
+        </div>
+        <div class="modal-card-body">
+            <p class="mb-3">Subcategories:</p>
+            {% for subcategor in subcategory %}
+            <button :class="['button m-2', inSubCategory({{subcategor['id']}}) ? 'is-link' : '' ]" value="{{subcategor['id']}}"
+                    @click="updateSubCategory({{subcategor['id']}})">
+                {{subcategor['name']}}
+            </button>
+            {% endfor %}
+        </div>
+        <div class="modal-card-body">
+            <p class="mb-3">Price range:</p>
+            {% for price_range in price_ranges %}
+            <button :class="['button m-2', inPriceRange({{price_range['id']}}) ? 'is-link' : '' ]" value="{{price_range['id']}}"
+                    @click="updatePriceRange({{price_range['id']}})">
+                {{price_range['name'].replace('(', '').replace(']', '').replace(',', ' - ')}}
+            </button>
+            {% endfor %}
+        </div>
+        <div class="modal-card-body">
+            <p class="mb-3"># of Lectures</p>
+            {% for num_lectures_range in num_lectures_ranges %}
+            <button :class="['button m-2', inNumLecturesRange({{num_lectures_range['id']}}) ? 'is-link' : '' ]" value="{{num_lectures_range['id']}}"
+                    @click="updateNumLecturesRange({{num_lectures_range['id']}})">
+                {{num_lectures_range['name'].replace('(', '').replace(']', '').replace(',', ' - ')}}
+            </button>
+            {% endfor %}
+        </div>
+        <footer class="modal-card-foot">
+            <button class="button is-link" :disabled="category.length == 0" @click="saveCategory">Save
+            </button>
+        </footer>
+    </div>
+</div>

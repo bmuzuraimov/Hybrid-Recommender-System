@@ -141,7 +141,8 @@ cython_debug/
 
 # Data Science
 # It is advisable to keep your data out of version control. Data can be large and can change often, making it not suitable for VC.
-data/
+data/raw/
+data/processed/
 *.data
 *.db
 
@@ -151,3 +152,6 @@ data/
 *.tmp
 *.log
 .tmp/
+.DS_Store
+.DS_Store
+.DS_Store

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Movie Recommender System</title>
+    <title>Course Recommender System</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -13,13 +13,13 @@
     {% include 'loading.html' %}
     <template v-else>
         {% include 'navbar.html' %}
-        <template v-if="genres.length > 0 && userRates.length > 0">
+        <template v-if="category.length > 0 && userRates.length > 0">
             {% if recommendations %} {% include 'recommendations.html' %} {% endif %}
             {% if likes_similars %} {% include 'similar_liked.html' %} {% endif %}
-            {% if likes %} {% include 'liked_movies.html' %} {% endif %}
+            {% if likes %} {% include 'liked_courses.html' %} {% endif %}
         </template>
-        {% include 'genres_modal.html' %}
-        {% include 'movies_modal.html' %}
+        {% include 'category_modal.html' %}
+        {% include 'courses_modal.html' %}
         {% include 'footer.html' %}
     </template>
 </div>
@@ -35,13 +35,17 @@
             onMounted(() => {
                 isLoading.value = false
 
-                showGenres.value = genres.value.length === 0
-                showMovieRate.value = (genres.value.length > 0 && userRates.value.length === 0)
+                showCategory.value = category.value.length === 0
+                showCourseRate.value = (category.value.length > 0 && userRates.value.length === 0)
             })
 
             function cleanAll() {
                 if (confirm("Are you sure to delete all records?")) {
-                    document.cookie = "user_genres=; Max-Age=0";
+                    document.cookie = "user_category=; Max-Age=0";
+                    document.cookie = "user_subcategory=; Max-Age=0";
+                    document.cookie = "user_price_ranges=; Max-Age=0";
+                    document.cookie = "user_num_lectures_ranges=; Max-Age=0";
+                    document.cookie = "user_content_length_minutes_ranges=; Max-Age=0";
                     document.cookie = "user_rates=; Max-Age=0";
                     document.cookie = "user_likes=; Max-Age=0";
                     reloadPage()
@@ -49,40 +53,140 @@
             }
 
             // ==== Genre Operation ====
-            const showGenres = ref(false)
-            const genres = ref({{user_genres | tojson}}) // If this place shows error, please check the format: ref({{user_genres | tojson}})
+            const showCategory = ref(false)
+            const category = ref({{user_category | tojson}}) // If this place shows error, please check the format: ref({{user_category | tojson}})
+            const subcategory = ref({{user_subcategory | tojson}}) // If this place shows error, please check the format: ref({{user_subcategory | tojson}})
+            const price_ranges = ref({{user_price_ranges | tojson}}) // If this place shows error, please check the format: ref({{price_ranges | tojson}})
+            const num_lectures_ranges = ref({{user_num_lectures_ranges | tojson}}) // If this place shows error, please check the format: ref({{num_lectures_ranges | tojson}})
+            const content_length_minutes_ranges = ref({{user_content_length_minutes_ranges | tojson}}) // If this place shows error, please check the format: ref({{content_length_minutes_ranges | tojson}})
 
-            function updateGenre(_id) {
+            function updateCategory(_id) {
                 let id = _id.toString()
-                const index = genres.value.indexOf(id);
+                const index = category.value.indexOf(id);
                 if (index > -1) {
-                    genres.value.splice(index, 1);
+                    category.value.splice(index, 1);
                 } else {
-                    genres.value.push(id);
-                    genres.value = genres.value.sort(function (a, b) {
+                    category.value.push(id);
+                    category.value = category.value.sort(function (a, b) {
                         return a - b;
                     });
                 }
             }
 
-            function inGenres(id) {
-                return genres.value.includes(id.toString())
+            function updateSubCategory(_id) {
+                let id = _id.toString()
+                const index = subcategory.value.indexOf(id);
+                if (index > -1) {
+                    subcategory.value.splice(index, 1);
+                } else {
+                    subcategory.value.push(id);
+                    subcategory.value = subcategory.value.sort(function (a, b) {
+                        return a - b;
+                    });
+                }
             }
 
-            function saveGenres() {
-                document.cookie = "user_genres=" + genres.value;
+            function updatePriceRange(_id) {
+                let id = _id.toString()
+                const index = price_ranges.value.indexOf(id);
+                if (index > -1) {
+                    price_ranges.value.splice(index, 1);
+                } else {
+                    price_ranges.value.push(id);
+                    price_ranges.value = price_ranges.value.sort(function (a, b) {
+                        return a - b;
+                    });
+                }
+            }
+
+            function updateNumLecturesRange(_id) {
+                let id = _id.toString()
+                const index = num_lectures_ranges.value.indexOf(id);
+                if (index > -1) {
+                    num_lectures_ranges.value.splice(index, 1);
+                } else {
+                    num_lectures_ranges.value.push(id);
+                    num_lectures_ranges.value = num_lectures_ranges.value.sort(function (a, b) {
+                        return a - b;
+                    });
+                }
+            }
+
+            function updateContentLengthMinutesRange(_id) {
+                let id = _id.toString()
+                const index = content_length_minutes_ranges.value.indexOf(id);
+                if (index > -1) {
+                    content_length_minutes_ranges.value.splice(index, 1);
+                } else {
+                    content_length_minutes_ranges.value.push(id);
+                    content_length_minutes_ranges.value = content_length_minutes_ranges.value.sort(function (a, b) {
+                        return a - b;
+                    });
+                }
+            }
+
+
+            function inCategory(id) {
+                return category.value.includes(id.toString())
+            }
+
+            function inSubCategory(id) {
+                return subcategory.value.includes(id.toString())
+            }
+
+            function inPriceRange(id) {
+                return price_ranges.value.includes(id.toString())
+            }
+
+            function inNumLecturesRange(id) {
+                return num_lectures_ranges.value.includes(id.toString())
+            }
+
+            function inContentLengthMinutesRange(id) {
+                return content_length_minutes_ranges.value.includes(id.toString())
+            }
+
+            function saveCategory() {
+                document.cookie = "user_category=" + category.value;
+                document.cookie = "user_subcategory=" + subcategory.value;
+                document.cookie = "user_price_ranges=" + price_ranges.value;
+                document.cookie = "user_num_lectures_ranges=" + num_lectures_ranges.value;
+                document.cookie = "user_content_length_minutes_ranges=" + content_length_minutes_ranges.value;
                 document.cookie = "user_rates=; Max-Age=0";
                 reloadPage()
             }
 
-            // ==== Movie Rate Operation ====
-            const showMovieRate = ref(false)
+            function saveSubcategory() {
+                document.cookie = "user_rates=; Max-Age=0";
+                reloadPage()
+            }
+
+            function savePriceRanges() {
+                document.cookie = "user_price_ranges=" + price_ranges.value;
+                document.cookie = "user_rates=; Max-Age=0";
+                reloadPage()
+            }
+
+            function saveNumLecturesRanges() {
+                document.cookie = "user_num_lectures_ranges=" + num_lectures_ranges.value;
+                document.cookie = "user_rates=; Max-Age=0";
+                reloadPage()
+            }
+
+            function saveContentLengthMinutesRanges() {
+                document.cookie = "user_content_length_minutes_ranges=" + content_length_minutes_ranges.value;
+                document.cookie = "user_rates=; Max-Age=0";
+                reloadPage()
+            }
+
+            // ==== Course Rate Operation ====
+            const showCourseRate = ref(false)
             const userRates = ref({{user_rates | tojson}}) // If this place shows error, please check the format: ref({{user_rates | tojson}})
 
-            function getRate(movieId) {
+            function getRate(courseId) {
                 for (let index in userRates.value) {
                     let record = userRates.value[index].split('|')
-                    if (parseInt(record[1]) === movieId) {
+                    if (parseInt(record[1]) === courseId) {
                         return [index, record[2]]
                     }
                 }
@@ -90,10 +194,10 @@
                 return [-1, -1]
             }
 
-            function updateRate(movieId, rate) {
-                let record = '611' + '|' + movieId + '|' + rate + '|' + '0' //  total 610 users, so the new user id is 944
+            function updateRate(courseId, rate) {
+                let record = '611' + '|' + courseId + '|' + rate + '|' + '0' //  total 610 users, so the new user id is 944
 
-                const index = getRate(movieId)[0];
+                const index = getRate(courseId)[0];
                 if (index > -1) {
                     userRates.value[index] = record;
                 } else {
@@ -102,24 +206,24 @@
                 document.cookie = "user_rates=" + userRates.value;
             }
 
-            // ==== Movie Like Operation ====
+            // ==== Course Like Operation ====
             const userLikes = ref({{user_likes | tojson}}) // If this place shows error, please check the format: ref({{user_likes | tojson}})
 
-            function updateLike(_movieId) {
-                let movieId = _movieId.toString()
-                const index = userLikes.value.indexOf(movieId);
+            function updateLike(_courseId) {
+                let courseId = _courseId.toString()
+                const index = userLikes.value.indexOf(courseId);
                 if (index > -1) {
                     userLikes.value.splice(index, 1);
                 } else {
-                    userLikes.value.push(movieId);
+                    userLikes.value.push(courseId);
                 }
 
                 document.cookie = "user_likes=" + userLikes.value;
 
                 reloadPage();
             }
-            function inLikes(movieId) {
-                return userLikes.value.includes(movieId.toString())
+            function inLikes(courseId) {
+                return userLikes.value.includes(courseId.toString())
             }
 
 
@@ -132,13 +236,32 @@
                 isActivityNavBar,
                 cleanAll,
 
-                showGenres,
-                genres,
-                updateGenre,
-                inGenres,
-                saveGenres,
+                showCategory,
+                category,
+                subcategory,
+                price_ranges,
+                num_lectures_ranges,
+                content_length_minutes_ranges,
 
-                showMovieRate,
+                updateCategory,
+                updateSubCategory,
+                updatePriceRange,
+                updateNumLecturesRange,
+                updateContentLengthMinutesRange,
+
+                inCategory,
+                inSubCategory,
+                inPriceRange,
+                inNumLecturesRange,
+                inContentLengthMinutesRange,
+
+                saveCategory,
+                saveSubcategory,
+                savePriceRanges,
+                saveNumLecturesRanges,
+                saveContentLengthMinutesRanges,
+                
+                showCourseRate,
                 userRates,
                 getRate,
                 updateRate,

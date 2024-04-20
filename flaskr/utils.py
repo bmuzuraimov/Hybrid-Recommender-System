@@ -1,6 +1,7 @@
 # TF-IDF by Overview
 import nltk
 import string
+import pickle
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
@@ -12,21 +13,49 @@ from surprise import KNNBasic
 from surprise import KNNWithMeans
 from surprise import Dataset
 from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
+import os
 
-def getUserLikesBy(movies, user_likes):
+rootPath = os.path.abspath(os.getcwd())
+
+# get numpy matrix from category_similarity_matrix.npy from ../data/processed/category_similarity_matrix.npy
+def get_category_similarity_matrix():
+    category_similarity_matrix = np.load(f'{rootPath}/data/processed/category_similarity_matrix.npy')
+    return category_similarity_matrix
+
+def get_subcategory_similarity_matrix():
+    subcategory_similarity_matrix = np.load(f'{rootPath}/data/processed/subcategory_similarity_matrix.npy')
+    return subcategory_similarity_matrix
+
+def get_price_bin2vec():
+    with open(f'{rootPath}/data/processed/bins2price.pkl', 'rb') as f:
+        price_bin2vec = pickle.load(f)
+    return price_bin2vec
+
+def get_num_lectures_bin2vec():
+    with open(f'{rootPath}/data/processed/bins2num_lectures.pkl', 'rb') as f:
+        num_lectures_bin2vec = pickle.load(f)
+    return num_lectures_bin2vec
+
+def get_content_length_minutes_bin2vec():
+    with open(f'{rootPath}/data/processed/bins2content_length_min.pkl', 'rb') as f:
+        content_length_minutes_bin2vec = pickle.load(f)
+    return content_length_minutes_bin2vec
+
+def getUserLikesBy(courses, user_likes):
     results = []
 
     if len(user_likes) > 0:
-        mask = movies['movieId'].isin([int(movieId) for movieId in user_likes])
-        results = movies.loc[mask]
+        mask = courses['id'].isin([int(courseId) for courseId in user_likes])
+        results = courses.loc[mask]
 
         original_orders = pd.DataFrame()
         for _id in user_likes:
-            movie = results.loc[results['movieId'] == int(_id)]
+            course = results.loc[results['id'] == int(_id)]
             if len(original_orders) == 0:
-                original_orders = movie
+                original_orders = course
             else:
-                original_orders = pd.concat([movie, original_orders])
+                original_orders = pd.concat([course, original_orders])
         results = original_orders
 
     # return the result
@@ -35,120 +64,105 @@ def getUserLikesBy(movies, user_likes):
     return results
 
 
-def getMoviesByGenres(movies, genres, user_genres):
+def getCoursesByCategory(courses, category, subcategory, price_ranges, num_lectures_ranges, content_length_minutes_ranges, user_category, user_subcategory, user_price_ranges, user_num_lectures_ranges, user_content_length_minutes_ranges):
     results = []
 
-    # ====  Do some operations ====
+    if len(user_category) > 0:
+        # Convert user category IDs to integers and create a mask for these categories
+        category_mask = category['id'].isin([int(id) for id in user_category])
+        subcategory_mask = subcategory['id'].isin([int(id) for id in user_subcategory])
+        price_ranges_mask = price_ranges['id'].isin([int(id) for id in user_price_ranges])
+        num_lectures_ranges_mask = num_lectures_ranges['id'].isin([int(id) for id in user_num_lectures_ranges])
+        content_length_minutes_ranges_mask = content_length_minutes_ranges['id'].isin([int(id) for id in user_content_length_minutes_ranges])
 
-    if len(user_genres) > 0:
-        genres_mask = genres['id'].isin([int(id) for id in user_genres])
-        user_genres = [1 if has is True else 0 for has in genres_mask]
-        user_genres_df = pd.DataFrame(user_genres)
-        user_genres_df.index = genres['name']
-        movies_genres = movies.iloc[:, 5:]
-        mask = (movies_genres.dot(user_genres_df) > 0).squeeze()
-        results = movies.loc[mask][:30]
+        # Get the category similarity matrix
+        category_similarity_matrix = get_category_similarity_matrix()
+        subcategory_similarity_matrix = get_subcategory_similarity_matrix()
+        price_bin2vec = get_price_bin2vec()
+        num_lectures_bin2vec = get_num_lectures_bin2vec()
+        content_length_minutes_bin2vec = get_content_length_minutes_bin2vec()
 
-    # ==== End ====
+        # Compute the average user category vector using the similarity matrix
+        user_category_vector = np.mean(category_similarity_matrix[category_mask], axis=0)
+        user_subcategory_vector = np.mean(subcategory_similarity_matrix[subcategory_mask], axis=0)
+        # user_price_vector = np.mean(price_bin2vec[price_ranges_mask], axis=0)
+        # user_num_lectures_vector = np.mean(num_lectures_bin2vec[num_lectures_ranges_mask], axis=0)
+        # user_content_length_minutes_vector = np.mean(content_length_minutes_bin2vec[content_length_minutes_ranges_mask], axis=0)
 
-    # return the result
+        # Ensure each row in 'category_dist' is properly shaped as a numpy array
+        user_preference_vector = np.concatenate([user_category_vector, user_subcategory_vector, np.zeros(29)])
+        courses['similarity'] = courses['profile'].apply(lambda x: np.dot(x, user_preference_vector))
+        # Filter courses based on similarity score and select the top 30
+        results = courses[courses['similarity'] > 0].nlargest(30, 'similarity')
+
+    # Return the result as a list of dictionaries if results are found
     if len(results) > 0:
         return results.to_dict('records')
     return results
 
 
-# Modify this function
-def getRecommendationBy(movies, rates, user_rates):
-    results = []
+def getRecommendationBy(courses, user_rates):
+    if not user_rates:
+        return [], "No ratings provided."
 
-    # ==== Do some operations ====
+    # Create data from user rates
+    user_rates_df = ratesFromUser(user_rates)
+    # drop rows that have lower than 3 ratings
+    user_rates_df = user_rates_df[user_rates_df['rating'] >= 3]
+    # get courses that have similar id with user rates
+    user_rates_df = user_rates_df.merge(courses, left_on='id', right_on='id', how='inner')
+    user_rates_df['profile'] = (5/user_rates_df['rating']) * user_rates_df['profile']
+    profile = user_rates_df['profile'].mean()
+  
+    courses['similarity'] = courses['profile'].apply(lambda x: np.dot(x, profile))
+    
+    recommended_courses = courses[courses['similarity'] > 0].nlargest(20, 'similarity')
 
-    # Check if there are any user_rates
-    if len(user_rates) > 0:
-        # Initialize a reader with rating scale from 1 to 5
-        reader = Reader(rating_scale=(1, 5))
-
-        # algo = KNNBasic(sim_options={'name': 'pearson', 'user_based': True})
-        algo = KNNWithMeans(sim_options={'name': 'cosine', 'user_based': True})
-
-        # Convert user_rates to rates from the user
-        user_rates = ratesFromUser(user_rates)
-
-        # Combine rates and user_rates into training_rates
-        training_rates = pd.concat([rates, user_rates], ignore_index=True)
-
-        # Load the training data from the training_rates DataFrame
-        training_data = Dataset.load_from_df(training_rates, reader=reader)
-
-        # Build a full training set from the training data
-        trainset = training_data.build_full_trainset()
-
-        # Fit the algorithm using the trainset
-        algo.fit(trainset)
-
-        # Convert the raw user id to the inner user id using algo.trainset
-        inner_id = trainset.to_inner_uid(611)
-
-        # Get the nearest neighbors of the inner_id
-        neighbors = algo.get_neighbors(inner_id, k=1)
-
-        # Convert the inner user ids of the neighbors back to raw user ids
-        neighbors_uid = [algo.trainset.to_raw_uid(x) for x in neighbors]
-
-        # Filter out the movies this neighbor likes.
-        results_movies = rates[rates['userId'].isin(neighbors_uid)]
-        moviesIds = results_movies[results_movies['rating'] > 2.5]['movieId']
-
-        # Convert the movie ids to details.
-        results = movies[movies['movieId'].isin(moviesIds)][:12]
-
-    # Return the result
-    if len(results) > 0:
-        return results.to_dict('records'), "These movies are recommended based on your ratings."
-    return results, "No recommendations."
-    # ==== End ====
+    if not recommended_courses.empty:
+        return recommended_courses.to_dict('records'), "These courses are recommended based on your ratings."
+    return [], "No recommendations."
 
 
 # Modify this function
-def getLikedSimilarBy(movies, user_likes):
+def getLikedSimilarBy(courses, user_likes):
     results = []
 
     # ==== Do some operations ====
     if len(user_likes) > 0:
 
         # # Step 1: Representing items with one-hot vectors
-        item_rep_matrix, item_rep_vector, feature_list = item_representation_based_movie_genres(movies)
+        item_rep_matrix, item_rep_vector, feature_list = item_representation_based_course_category(courses)
 
         # # Step 2: Building user profile
         user_profile = build_user_profile(user_likes, item_rep_vector, feature_list)
 
         # # Step 3: Predicting user interest in items
         results = generate_recommendation_results(user_profile, item_rep_matrix, item_rep_vector, 12)
-        # movie_TF_IDF_vector, tfidf_feature_list = build_tfidf_vectors()
-        # user_profile = build_tfidf_user_profile(user_likes, movie_TF_IDF_vector, tfidf_feature_list)
-        # results = generate_tf_idf_recommendation_results(user_profile, movie_TF_IDF_vector, tfidf_feature_list, 12)
+        # course_TF_IDF_vector, tfidf_feature_list = build_tfidf_vectors()
+        # user_profile = build_tfidf_user_profile(user_likes, course_TF_IDF_vector, tfidf_feature_list)
+        # results = generate_tf_idf_recommendation_results(user_profile, course_TF_IDF_vector, tfidf_feature_list, 12)
     # Return the result
     if len(results) > 0:
-        return results.to_dict('records'), "The movies are similar to your liked movies."
-    return results, "No similar movies found."
+        return results.to_dict('records'), "The courses are similar to your liked courses."
+    return results, "No similar courses found."
 
     # ==== End ====
 
 
-def item_representation_based_movie_genres(movies_df):
-    movies_with_genres = movies_df.copy(deep=True)
+def item_representation_based_course_category(courses_df):
+    courses_with_category = courses_df.copy(deep=True)
 
-    genre_list = movies_with_genres.columns[5:]
-    movies_genre_matrix = movies_with_genres[genre_list].to_numpy()
-    return movies_genre_matrix, movies_with_genres, genre_list
+    genre_list = courses_with_category.columns[5:]
+    courses_genre_matrix = courses_with_category[genre_list].to_numpy()
+    return courses_genre_matrix, courses_with_category, genre_list
 
 
-def build_user_profile(movieIds, item_rep_vector, feature_list, normalized=True):
+def build_user_profile(courseIds, item_rep_vector, feature_list, normalized=True):
 
     ## Calculate item representation matrix to represent user profiles
-    user_movie_rating_df = item_rep_vector[item_rep_vector['movieId'].isin(movieIds)]
-    user_movie_df = user_movie_rating_df[feature_list].mean()
-    user_profile = user_movie_df.T
+    user_course_rating_df = item_rep_vector[item_rep_vector['id'].isin(courseIds)]
+    user_course_df = user_course_rating_df[feature_list].mean()
+    user_profile = user_course_df.T
 
     if normalized:
         user_profile = user_profile / sum(user_profile.values)
@@ -156,7 +170,7 @@ def build_user_profile(movieIds, item_rep_vector, feature_list, normalized=True)
     return user_profile
 
 
-def generate_recommendation_results(user_profile,item_rep_matrix, movies_data, k=12):
+def generate_recommendation_results(user_profile,item_rep_matrix, courses_data, k=12):
 
     u_v = user_profile.values
     u_v_matrix = [u_v]
@@ -164,7 +178,7 @@ def generate_recommendation_results(user_profile,item_rep_matrix, movies_data, k
     # Comput the cosine similarity
     recommendation_table = cosine_similarity(u_v_matrix, item_rep_matrix)
 
-    recommendation_table_df = movies_data.copy(deep=True)
+    recommendation_table_df = courses_data.copy(deep=True)
     recommendation_table_df['similarity'] = recommendation_table[0]
     rec_result = recommendation_table_df.sort_values(by=['similarity'], ascending=False)[:k]
 
@@ -208,9 +222,9 @@ def preprocessing(text):
 
     return text_processed
 
-def build_tfidf_vectors(movies):
-    movies_vectors = movies.copy(deep=True)
-    movies_vectors['overview'] = movies_vectors['overview'].fillna('')
+def build_tfidf_vectors(courses):
+    courses_vectors = courses.copy(deep=True)
+    courses_vectors['overview'] = courses_vectors['overview'].fillna('')
 
     # Import TfIdfVectorizer from scikit-learn
     from sklearn.feature_extraction.text import TfidfVectorizer
@@ -221,28 +235,28 @@ def build_tfidf_vectors(movies):
         ngram_range=(1, 1),
         max_features=20
     )
-    tfidf_matrix = tfidf.fit_transform(movies_vectors['overview'])
+    tfidf_matrix = tfidf.fit_transform(courses_vectors['overview'])
 
-    movie_TF_IDF_vector = pd.DataFrame(tfidf_matrix.toarray(), columns=tfidf.get_feature_names_out())
-    movie_TF_IDF_vector['movieId'] = movies['movieId']
-    return movie_TF_IDF_vector, tfidf.get_feature_names_out()[:20]
+    course_TF_IDF_vector = pd.DataFrame(tfidf_matrix.toarray(), columns=tfidf.get_feature_names_out())
+    course_TF_IDF_vector['id'] = courses['id']
+    return course_TF_IDF_vector, tfidf.get_feature_names_out()[:20]
 
-def build_tfidf_user_profile(user_likes, movie_TF_IDF_vector, tfidf_feature_list, normalized=True):
-    user_movie = movie_TF_IDF_vector[movie_TF_IDF_vector['movieId'].isin(user_likes)]
-    user_movie_df = user_movie[tfidf_feature_list].mean()
-    user_profile = user_movie_df.T
+def build_tfidf_user_profile(user_likes, course_TF_IDF_vector, tfidf_feature_list, normalized=True):
+    user_course = course_TF_IDF_vector[course_TF_IDF_vector['id'].isin(user_likes)]
+    user_course_df = user_course[tfidf_feature_list].mean()
+    user_profile = user_course_df.T
 
     if normalized:
         user_profile = user_profile / sum(user_profile.values)
     return user_profile
 
-def generate_tf_idf_recommendation_results(movies, user_profile, movie_TF_IDF_vector, tfidf_feature_list, k=12):
+def generate_tf_idf_recommendation_results(courses, user_profile, course_TF_IDF_vector, tfidf_feature_list, k=12):
     # Compute the cosine similarity
     u_v = user_profile
     u_v_matrix = [u_v]
 
-    recommendation_table = cosine_similarity(u_v_matrix, movie_TF_IDF_vector[tfidf_feature_list])
-    recommendation_table_df = movies.copy(deep=True)
+    recommendation_table = cosine_similarity(u_v_matrix, course_TF_IDF_vector[tfidf_feature_list])
+    recommendation_table_df = courses.copy(deep=True)
     recommendation_table_df['similarity'] = recommendation_table[0]
     rec_result = recommendation_table_df.sort_values(by=['similarity'], ascending=False)[:k]
 

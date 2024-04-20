@@ -23,8 +23,8 @@ def scrape_api(url):
         return None
 
 
-def get_movie_png(movie_name):
-    search_url = f"https://www.imdb.com/find/?q={urlParse.quote(movie_name)}&exact=true"
+def get_course_png(course_name):
+    search_url = f"https://www.imdb.com/find/?q={urlParse.quote(course_name)}&exact=true"
     response = scrape_api(search_url)
     if response is None:
         return None
@@ -40,13 +40,13 @@ def get_movie_png(movie_name):
     return href
 
 
-# movie id | movie title | release date | video release date |
+# course id | course title | release date | video release date |
 #               IMDb URL | unknown | Action | Adventure | Animation |
 #               Children's | Comedy | Crime | Documentary | Drama | Fantasy |
 #               Film-Noir | Horror | Musical | Mystery | Romance | Sci-Fi |
 #               Thriller | War | Western |
 def getOriginalItems():
-    file = open(f"{current_app.root_path}/static/ml_data_lab2/movie_info.csv", encoding="ISO-8859-1")
+    file = open(f"{current_app.root_path}/static/ml_data_lab2/course_info.csv", encoding="ISO-8859-1")
     data = list(csv.reader(file, delimiter=","))
     file.close()
     return data
@@ -54,7 +54,7 @@ def getOriginalItems():
 
 def covertMovieDataWithOverview():
     rootPath = os.path.abspath(os.getcwd())
-    path = f"{rootPath}/flaskr/static/ml_data_lab2/movie_info_new.csv"
+    path = f"{rootPath}/flaskr/static/ml_data_lab2/course_info_new.csv"
 
     file1 = open(path, 'r')
     lines = file1.readlines()
@@ -78,37 +78,37 @@ def covertMovieDataWithOverview():
         array = []
 
     for line in final_lines:
-        file = open(f"{rootPath}/flaskr/static/ml_data_lab2/movie_info_new_2.csv", "a")
+        file = open(f"{rootPath}/flaskr/static/ml_data_lab2/course_info_new_2.csv", "a")
         file.write(line)
         file.close()
 
     rootPath = os.path.abspath(os.getcwd())
-    path = f"{rootPath}/flaskr/static/ml_data_lab2/movie_info_new_3.csv"
-    # df = pd.read_csv(path, delimiter=",", names=["movieId", "title", "year", "overview", "cover_url", "genres"])
+    path = f"{rootPath}/flaskr/static/ml_data_lab2/course_info_new_3.csv"
+    # df = pd.read_csv(path, delimiter=",", names=["courseId", "title", "year", "overview", "cover_url", "category"])
     df = pd.read_csv(path)
-    df.set_index('movieId')
+    df.set_index('id')
 
-    df['genres'] = df.genres.str.split('|')
+    df['category'] = df.category.str.split('|')
 
-    genre_list = []  # store the occurred genres
+    genre_list = []  # store the occurred category
 
     for index, row in df.iterrows():
-        for genre in row['genres']:
+        for genre in row['category']:
             df.at[index, genre] = 1
             if genre not in genre_list:
                 genre_list.append(genre)
 
     df = df.fillna(0)
 
-    lines = ["movieId" + "|title" + "|year" + "|overview" + "|cover_url" + "|genres" + '|'.join(genre_list) + '\n']
+    lines = ["courseId" + "|title" + "|year" + "|overview" + "|cover_url" + "|category" + '|'.join(genre_list) + '\n']
 
     for index, row in df.iterrows():
-        line = str(row['movieId']) + '|' + str(row['title']) + '|' + str(row['year']) + '|"' + str(
+        line = str(row['id']) + '|' + str(row['title']) + '|' + str(row['year']) + '|"' + str(
             row['overview']) + '"|' + str(row['cover_url']) + '|' + '|'.join(
             str(int(x)) for x in list(row.iloc[6:])) + '\n'
         lines.append(line)
 
     for line in lines:
-        file = open(f"{rootPath}/flaskr/static/ml_data_lab2/movie_info_new_3.csv", "a")
+        file = open(f"{rootPath}/flaskr/static/ml_data_lab2/course_info_new_3.csv", "a")
         file.write(line)
         file.close()
