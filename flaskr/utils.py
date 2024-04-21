@@ -1,16 +1,13 @@
 import pandas as pd
 from .tools.data_tool import (
     ratesFromUser,
-    getCategories,
-    getSubCategories,
-    getPriceRanges,
-    getNumLecturesRanges,
-    getContentLengthMinutesRanges,
-    get_category_similarity_matrix,
-    get_subcategory_similarity_matrix,
-    get_price_bin2vec,
-    get_num_lectures_bin2vec,
-    get_content_length_minutes_bin2vec
+    get_categories,
+    get_sub_categories,
+    get_price_ranges,
+    get_num_lectures_ranges,
+    get_content_length_minutes_ranges,
+    get_similarity_matrices,
+    get_bin2vec_mappings
 )
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
@@ -20,34 +17,31 @@ rootPath = os.path.abspath(os.getcwd())
 
 
 def get_user_likes_by(courses, user_likes):
-    results = []
+    if not user_likes:
+        return []
 
-    if len(user_likes) > 0:
-        mask = courses['id'].isin([int(courseId) for courseId in user_likes])
-        results = courses.loc[mask]
+    # Convert user_likes to integer, in case they're not
+    user_likes = [int(id) for id in user_likes]
 
-        original_orders = pd.DataFrame()
-        for _id in user_likes:
-            course = results.loc[results['id'] == int(_id)]
-            if len(original_orders) == 0:
-                original_orders = course
-            else:
-                original_orders = pd.concat([course, original_orders])
-        results = original_orders
+    # Filter courses based on user likes (assuming 'id' is the index)
+    results = courses.loc[courses.index.intersection(user_likes)]
 
-    # return the result
-    if len(results) > 0:
-        return results.to_dict('records')
-    return results
+    # Reorder the results according to the order in user_likes
+    # Map the order of user_likes to the DataFrame index
+    order_dict = {id: index for index, id in enumerate(user_likes)}
+    results['order'] = results.index.map(order_dict)
+    ordered_results = results.sort_values('order').drop('order', axis=1)
+    # Return the results in the expected format
+    return ordered_results.reset_index().to_dict('records') if not ordered_results.empty else []
 
 
 def get_courses_by_category(courses, user_category, user_subcategory, user_price_ranges, user_num_lectures_ranges, user_content_length_minutes_ranges):
     results = []
-    category = getCategories()
-    subcategory = getSubCategories()
-    price_ranges = getPriceRanges()
-    num_lectures_ranges = getNumLecturesRanges()
-    content_length_minutes_ranges = getContentLengthMinutesRanges()
+    category = get_categories()
+    subcategory = get_sub_categories()
+    price_ranges = get_price_ranges()
+    num_lectures_ranges = get_num_lectures_ranges()
+    content_length_minutes_ranges = get_content_length_minutes_ranges()
 
     if len(user_category) > 0:
         # Convert user category IDs to integers and create a mask for these categories
@@ -62,17 +56,15 @@ def get_courses_by_category(courses, user_category, user_subcategory, user_price
             [int(id) for id in user_content_length_minutes_ranges])
 
         # Get the category similarity matrix
-        category_similarity_matrix = get_category_similarity_matrix()
-        subcategory_similarity_matrix = get_subcategory_similarity_matrix()
-        price_bin2vec = get_price_bin2vec()
-        num_lectures_bin2vec = get_num_lectures_bin2vec()
-        content_length_minutes_bin2vec = get_content_length_minutes_bin2vec()
-
+        category_similarity_matrix, subcategory_similarity_matrix = get_similarity_matrices()
         # Compute the average user category vector using the similarity matrix
-        user_category_vector = np.mean(
+        user_category_vector = np.nanmean(
             category_similarity_matrix[category_mask], axis=0)
-        user_subcategory_vector = np.mean(
+        user_category_vector[np.isnan(user_category_vector)] = 0
+
+        user_subcategory_vector = np.nanmean(
             subcategory_similarity_matrix[subcategory_mask], axis=0)
+        user_subcategory_vector[np.isnan(user_subcategory_vector)] = 0
         # user_price_vector = np.mean(price_bin2vec[price_ranges_mask], axis=0)
         # user_num_lectures_vector = np.mean(num_lectures_bin2vec[num_lectures_ranges_mask], axis=0)
         # user_content_length_minutes_vector = np.mean(content_length_minutes_bin2vec[content_length_minutes_ranges_mask], axis=0)
@@ -84,10 +76,9 @@ def get_courses_by_category(courses, user_category, user_subcategory, user_price
             lambda x: np.dot(x, user_preference_vector))
         # Filter courses based on similarity score and select the top 30
         results = courses[courses['similarity'] > 0].nlargest(30, 'similarity')
-
     # Return the result as a list of dictionaries if results are found
     if len(results) > 0:
-        return results.to_dict('records')
+        return results.reset_index().to_dict('records')
     return results
 
 
@@ -113,74 +104,37 @@ def get_recommendation_by_content_based_filtering(courses, user_rates):
         20, 'similarity')
 
     if not recommended_courses.empty:
-        return recommended_courses.to_dict('records'), "These courses are recommended based on your ratings."
+        return recommended_courses.reset_index().to_dict('records'), "These courses are recommended based on your ratings."
     return [], "No recommendations."
 
 
-# Modify this function
 def get_liked_similar_by(courses, user_likes):
     results = []
 
-    # ==== Do some operations ====
     if len(user_likes) > 0:
+        # Assuming 'courses' is a DataFrame with 'profile' being a column of arrays or list
+        user_profile = courses.loc[courses.index.isin(user_likes), 'profile'].mean(axis=0)
+        course_rep_matrix = np.stack(courses['profile'].values)  # Stack arrays row-wise
+        
+        results = _generate_recommendation_results(user_profile, course_rep_matrix, courses, 12)
+        
+    if results and not results.empty:
+        return results.reset_index().to_dict('records'), "The courses are similar to your liked courses."
+    return [], "No similar courses found."
 
-        # # Step 1: Representing items with one-hot vectors
-        item_rep_matrix, item_rep_vector, feature_list = item_representation_based_course_category(
-            courses)
-
-        # # Step 2: Building user profile
-        user_profile = build_user_profile(
-            user_likes, item_rep_vector, feature_list)
-
-        # # Step 3: Predicting user interest in items
-        results = generate_recommendation_results(
-            user_profile, item_rep_matrix, item_rep_vector, 12)
-        # course_TF_IDF_vector, tfidf_feature_list = build_tfidf_vectors()
-        # user_profile = build_tfidf_user_profile(user_likes, course_TF_IDF_vector, tfidf_feature_list)
-        # results = generate_tf_idf_recommendation_results(user_profile, course_TF_IDF_vector, tfidf_feature_list, 12)
-    # Return the result
-    if len(results) > 0:
-        return results.to_dict('records'), "The courses are similar to your liked courses."
-    return results, "No similar courses found."
-
-    # ==== End ====
-
-
-def item_representation_based_course_category(courses_df):
-    courses_with_category = courses_df.copy(deep=True)
-
-    genre_list = courses_with_category.columns[5:]
-    courses_genre_matrix = courses_with_category[genre_list].to_numpy()
-    return courses_genre_matrix, courses_with_category, genre_list
-
-
-def build_user_profile(courseIds, item_rep_vector, feature_list, normalized=True):
-
-    # Calculate item representation matrix to represent user profiles
-    user_course_rating_df = item_rep_vector[item_rep_vector['id'].isin(
-        courseIds)]
-    user_course_df = user_course_rating_df[feature_list].mean()
-    user_profile = user_course_df.T
-
-    if normalized:
-        user_profile = user_profile / sum(user_profile.values)
-
-    return user_profile
-
-
-def generate_recommendation_results(user_profile, item_rep_matrix, courses_data, k=12):
-
-    u_v = user_profile.values
-    u_v_matrix = [u_v]
-
-    # Comput the cosine similarity
-    recommendation_table = cosine_similarity(u_v_matrix, item_rep_matrix)
-
-    recommendation_table_df = courses_data.copy(deep=True)
+def _generate_recommendation_results(user_profile, item_rep_matrix, courses_data, k=12):
+    # Ensure the user_profile is a 2D array with shape (1, number of features)
+    user_profile_reshaped = user_profile.reshape(1, -1)
+    # item_rep_matrix should already be in shape (number of courses, number of features)
+    
+    # Compute the cosine similarity
+    recommendation_table = cosine_similarity(user_profile_reshaped, item_rep_matrix)
+    
+    # Convert similarity scores to a DataFrame column
+    recommendation_table_df = courses_data.copy()
     recommendation_table_df['similarity'] = recommendation_table[0]
-    rec_result = recommendation_table_df.sort_values(
-        by=['similarity'], ascending=False)[:k]
-
+    rec_result = recommendation_table_df.sort_values(by='similarity', ascending=False).head(k)
+    
     return rec_result
 
 
