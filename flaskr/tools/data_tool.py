@@ -3,22 +3,21 @@ import pandas as pd
 import pickle
 import numpy as np
 
-def loadData():
+rootPath = os.path.abspath(os.getcwd())
+
+
+def load_data():
     return getCourses(), getCategories(), getSubCategories(), getPriceRanges(), getNumLecturesRanges(), getContentLengthMinutesRanges()
 
 
-# courseId,title,year,overview,cover_url,category
 def getCourses():
     rootPath = os.path.abspath(os.getcwd())
     path = f"{rootPath}/data/processed/course_info_minified.pkl"
-    # df = pd.read_csv(path, delimiter=",", names=["courseId", "title", "year", "overview", "cover_url", "category"])
     df = pd.read_pickle(path)
     df = df.sample(frac=1).reset_index(drop=True)
     df.set_index('id')
     return df
 
-
-# A list of the categories.
 def getCategories():
     rootPath = os.path.abspath(os.getcwd())
     path = f"{rootPath}/data/processed/category.pkl"
@@ -46,6 +45,7 @@ def getPriceRanges():
     price_df.set_index('id')
     return price_df
 
+
 def getNumLecturesRanges():
     rootPath = os.path.abspath(os.getcwd())
     path = f"{rootPath}/data/processed/id2num_lectures.pkl"
@@ -54,6 +54,7 @@ def getNumLecturesRanges():
     num_lectures_df = pd.DataFrame(num_lectures)
     num_lectures_df.set_index('id')
     return num_lectures_df
+
 
 def getContentLengthMinutesRanges():
     rootPath = os.path.abspath(os.getcwd())
@@ -64,11 +65,44 @@ def getContentLengthMinutesRanges():
     content_length_min_df.set_index('id')
     return content_length_min_df
 
+
+def get_category_similarity_matrix():
+    category_similarity_matrix = np.load(
+        f'{rootPath}/data/processed/category_similarity_matrix.npy')
+    return category_similarity_matrix
+
+
+def get_subcategory_similarity_matrix():
+    subcategory_similarity_matrix = np.load(
+        f'{rootPath}/data/processed/subcategory_similarity_matrix.npy')
+    return subcategory_similarity_matrix
+
+
+def get_price_bin2vec():
+    with open(f'{rootPath}/data/processed/bins2price.pkl', 'rb') as f:
+        price_bin2vec = pickle.load(f)
+    return price_bin2vec
+
+
+def get_num_lectures_bin2vec():
+    with open(f'{rootPath}/data/processed/bins2num_lectures.pkl', 'rb') as f:
+        num_lectures_bin2vec = pickle.load(f)
+    return num_lectures_bin2vec
+
+
+def get_content_length_minutes_bin2vec():
+    with open(f'{rootPath}/data/processed/bins2content_length_min.pkl', 'rb') as f:
+        content_length_minutes_bin2vec = pickle.load(f)
+    return content_length_minutes_bin2vec
+
 # user id | item id | rating | timestamp
+
+
 def getRates():
     rootPath = os.path.abspath(os.getcwd())
     path = f"{rootPath}/flaskr/static/ml_data_lab2/ratings.csv"
-    df = pd.read_csv(path, delimiter=",", names=["userId", "courseId", "rating", "timestamp"])
+    df = pd.read_csv(path, delimiter=",", names=[
+                     "userId", "courseId", "rating", "timestamp"])
     df = df.drop(columns='timestamp')
     df = df[['userId', 'courseId', 'rating']]
 

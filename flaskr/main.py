@@ -1,83 +1,46 @@
-from flask import (
-    Blueprint, render_template, request
-)
+from flask import Blueprint, render_template, request
 
-from .tools.data_tool import *
-from .utils import *
+# Import custom utility modules
+from .tools.data_tool import load_data
+from .utils import get_courses_by_category, get_recommendation_by_content_based_filtering, get_liked_similar_by, get_user_likes_by, parse_cookie
 
-
-
+# Initialize the Blueprint
 bp = Blueprint('main', __name__, url_prefix='/')
 
-courses, category, subcategories, price_ranges, num_lectures_ranges, content_length_minutes_ranges = loadData()
-
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('wordnet')
-nltk.download('averaged_perceptron_tagger')
+# Load initial data
+courses, category, subcategories, price_ranges, num_lectures_ranges, content_length_minutes_ranges = load_data()
 
 @bp.route('/', methods=('GET', 'POST'))
 def index():
-
-    # Default Category List
+    # Convert database query results to dictionaries
     default_category = category.to_dict('records')
     default_subcategories = subcategories.to_dict('records')
     default_price_ranges = price_ranges.to_dict('records')
     default_num_lectures_ranges = num_lectures_ranges.to_dict('records')
     default_content_length_minutes_ranges = content_length_minutes_ranges.to_dict('records')
 
-    # User Category
-    user_category = request.cookies.get('user_category')
-    if user_category:
-        user_category = user_category.split(",")
-    else:
-        user_category = []
+    # Retrieve user preferences from cookies
+    user_category = parse_cookie(request.cookies.get('user_category'))
+    user_subcategory = parse_cookie(request.cookies.get('user_subcategory'))
+    user_price_ranges = parse_cookie(request.cookies.get('user_price_ranges'))
+    user_num_lectures_ranges = parse_cookie(request.cookies.get('user_num_lectures_ranges'))
+    user_content_length_minutes_ranges = parse_cookie(request.cookies.get('user_content_length_minutes_ranges'))
+    user_rates = parse_cookie(request.cookies.get('user_rates'))
+    user_likes = parse_cookie(request.cookies.get('user_likes'), int)
 
-    # User Subcategory
-    user_subcategory = request.cookies.get('user_subcategory')
-    if user_subcategory:
-        user_subcategory = user_subcategory.split(",")
-    else:
-        user_subcategory = []
-
-    # Price Ranges
-    user_price_ranges = request.cookies.get('user_price_ranges')
-    if user_price_ranges:
-        user_price_ranges = user_price_ranges.split(",")
-    else:
-        user_price_ranges = []
-
-    # Num Lectures Ranges
-    user_num_lectures_ranges = request.cookies.get('user_num_lectures_ranges')
-    if user_num_lectures_ranges:
-        user_num_lectures_ranges = user_num_lectures_ranges.split(",")
-    else:
-        user_num_lectures_ranges = []
+    # Fetch courses based on the default category and user preferences
+    default_category_courses = get_courses_by_category(courses, user_category, user_subcategory, user_price_ranges, user_num_lectures_ranges, user_content_length_minutes_ranges)[:12]
     
-    # Content Length Minutes Ranges
-    user_content_length_minutes_ranges = request.cookies.get('user_content_length_minutes_ranges')
-    if user_content_length_minutes_ranges:
-        user_content_length_minutes_ranges = user_content_length_minutes_ranges.split(",")
-    else:
-        user_content_length_minutes_ranges = []
+    # Get recommendations based on user ratings
+    recommendations_courses, recommendations_message = get_recommendation_by_content_based_filtering(courses, user_rates)
+    
+    # Get courses similar to those liked by the user
+    likes_similar_courses, likes_similar_message = get_liked_similar_by(courses, user_likes)
+    
+    # Get courses directly liked by the user
+    likes_courses = get_user_likes_by(courses, user_likes)
 
-    # User Rates
-    user_rates = request.cookies.get('user_rates')
-    if user_rates:
-        user_rates = user_rates.split(",")
-    else:
-        user_rates = []
-    # User Likes
-    user_likes = request.cookies.get('user_likes')
-    if user_likes:
-        user_likes = user_likes.split(",")
-    else:
-        user_likes = []
-
-    default_category_courses = getCoursesByCategory(courses, category, subcategories, price_ranges, num_lectures_ranges, content_length_minutes_ranges, user_category, user_subcategory, user_price_ranges, user_num_lectures_ranges, user_content_length_minutes_ranges)[:12]
-    recommendations_courses, recommendations_message = getRecommendationBy(courses, user_rates)
-    likes_similar_courses, likes_similar_message = getLikedSimilarBy(courses, [int(numeric_string) for numeric_string in user_likes])
-    likes_courses = getUserLikesBy(courses, user_likes)
+    # Render the template with all data prepared
     return render_template('index.html',
                            category=default_category,
                            subcategory=default_subcategories,
