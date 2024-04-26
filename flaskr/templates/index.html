@@ -4,7 +4,19 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Course Recommender System</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"> -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+          theme: {
+            extend: {
+              colors: {
+                clifford: '#da373d',
+              }
+            }
+          }
+        }
+      </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
@@ -13,7 +25,7 @@
     {% include 'loading.html' %}
     <template v-else>
         {% include 'navbar.html' %}
-        <template v-if="category.length > 0 && userRates.length > 0">
+        <template v-if="(category.length > 0 || subcategory.length > 0) && userRates.length > 0">
             {% if recommendations %} {% include 'recommendations.html' %} {% endif %}
             {% if likes_similars %} {% include 'similar_liked.html' %} {% endif %}
             {% if likes %} {% include 'liked_courses.html' %} {% endif %}
@@ -34,9 +46,8 @@
             // ==== Vue default operations ====
             onMounted(() => {
                 isLoading.value = false
-
-                showCategory.value = category.value.length === 0
-                showCourseRate.value = (category.value.length > 0 && userRates.value.length === 0)
+                showCategory.value = category.value.length === 0 && subcategory.value.length === 0
+                showCourseRate.value = ((category.value.length > 0 || subcategory.value.length > 0) && userRates.value.length === 0)
             })
 
             function cleanAll() {
@@ -146,34 +157,11 @@
                 return content_length_minutes_ranges.value.includes(id.toString())
             }
 
-            function saveCategory() {
+            function savePreference() {
                 document.cookie = "user_category=" + category.value;
                 document.cookie = "user_subcategory=" + subcategory.value;
                 document.cookie = "user_price_ranges=" + price_ranges.value;
                 document.cookie = "user_num_lectures_ranges=" + num_lectures_ranges.value;
-                document.cookie = "user_content_length_minutes_ranges=" + content_length_minutes_ranges.value;
-                document.cookie = "user_rates=; Max-Age=0";
-                reloadPage()
-            }
-
-            function saveSubcategory() {
-                document.cookie = "user_rates=; Max-Age=0";
-                reloadPage()
-            }
-
-            function savePriceRanges() {
-                document.cookie = "user_price_ranges=" + price_ranges.value;
-                document.cookie = "user_rates=; Max-Age=0";
-                reloadPage()
-            }
-
-            function saveNumLecturesRanges() {
-                document.cookie = "user_num_lectures_ranges=" + num_lectures_ranges.value;
-                document.cookie = "user_rates=; Max-Age=0";
-                reloadPage()
-            }
-
-            function saveContentLengthMinutesRanges() {
                 document.cookie = "user_content_length_minutes_ranges=" + content_length_minutes_ranges.value;
                 document.cookie = "user_rates=; Max-Age=0";
                 reloadPage()
@@ -255,11 +243,7 @@
                 inNumLecturesRange,
                 inContentLengthMinutesRange,
 
-                saveCategory,
-                saveSubcategory,
-                savePriceRanges,
-                saveNumLecturesRanges,
-                saveContentLengthMinutesRanges,
+                savePreference,
                 
                 showCourseRate,
                 userRates,

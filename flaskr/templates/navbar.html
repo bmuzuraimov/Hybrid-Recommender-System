@@ -1,35 +1,19 @@
-<div class="container">
-    <nav :class="['navbar', 'is-active']" role="navigation" aria-label="main navigation">
-        <div class="navbar-brand">
-            <a class="navbar-item" href="/">
-                <span class="is-size-3">Udemy Course Recommender System</span>
+<header>
+    <nav class="bg-white border-gray-200 px-4 lg:px-6 py-2.5 dark:bg-gray-800">
+        <div class="flex flex-wrap justify-between items-center mx-auto max-w-screen-xl">
+            <a href="/" class="flex items-center">
+                <span class="self-center text-xl font-semibold whitespace-nowrap dark:text-white">Udemy Course Recommender System</span>
             </a>
-
-            <a role="button" :class="['navbar-burger', isActivityNavBar ? 'is-active' : '']" aria-label="menu"
-               aria-expanded="false"
-               data-target="navbarBasicExample" @click="isActivityNavBar = !isActivityNavBar">
-                <span aria-hidden="true"></span>
-                <span aria-hidden="true"></span>
-                <span aria-hidden="true"></span>
-            </a>
-        </div>
-
-        <div id="navbarBasicExample" :class="['navbar-menu', isActivityNavBar ? 'is-active' : '']">
-            <div class="navbar-start">
-            </div>
-            <div class="navbar-end">
-                <div class="navbar-item">
-                    <div class="buttons">
-                        <button class="button is-danger" @click="cleanAll">
-                            <strong>Clan All</strong>
-                        </button>
-
-                        <button class="button is-link" @click="showCategory = true">
-                            <strong>Category</strong>
-                        </button>
-                    </div>
-                </div>
+            <div class="justify-between items-center w-full lg:flex lg:w-auto lg:order-1" id="mobile-menu-search">
+                <ul class="flex flex-col mt-4 font-medium lg:flex-row lg:space-x-8 lg:mt-0">
+                    <li @click="showCategory = true">
+                        <a href="#" class="block py-2 pr-4 pl-3 text-primary-700 dark:hover:bg-gray-700 hover:bg-gray-50 text-white rounded lg:text-primary-700 lg:p-0 dark:text-white">Category</a>
+                    </li>
+                    <li @click="cleanAll">
+                        <a href="#" class="block py-2 pr-4 pl-3 text-red-700 dark:hover:bg-gray-700 hover:bg-gray-50 text-red-400 rounded lg:text-red-700 lg:p-0 dark:text-red-400">Clean All</a>
+                    </li>
+                </ul>
             </div>
         </div>
     </nav>
-</div>
+</header>

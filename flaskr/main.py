@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request
 
 # Import custom utility modules
 from .tools.data_tool import load_data
-from .utils import get_courses_by_category, get_recommendation_by_content_based_filtering, get_liked_similar_by, get_user_likes_by, parse_cookie
+from .utils import get_courses_by_preference, get_recommendation_by_content_based_filtering, get_liked_similar_by, get_user_likes_by, parse_cookie
 
 # Initialize the Blueprint
 bp = Blueprint('main', __name__, url_prefix='/')
@@ -29,15 +29,16 @@ def index():
     user_likes = parse_cookie(request.cookies.get('user_likes'), int)
 
     # Fetch courses based on the default category and user preferences
-    default_category_courses = get_courses_by_category(courses, user_category, user_subcategory, user_price_ranges, user_num_lectures_ranges, user_content_length_minutes_ranges)[:12]
+    default_category_courses = get_courses_by_preference(courses, user_category, user_subcategory)[:12]
     # Get recommendations based on user ratings
-    recommendations_courses, recommendations_message = get_recommendation_by_content_based_filtering(courses, user_rates)
+    recommendations_courses, recommendations_message = get_recommendation_by_content_based_filtering(courses, user_rates, user_likes)
+
     # Get courses similar to those liked by the user
     likes_similar_courses, likes_similar_message = get_liked_similar_by(courses, user_likes)
     
     # Get courses directly liked by the user
     likes_courses = get_user_likes_by(courses, user_likes)
-    print(likes_courses)
+    
     # Render the template with all data prepared
     return render_template('index.html',
                            category=default_category,

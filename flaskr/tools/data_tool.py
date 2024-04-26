@@ -14,13 +14,17 @@ def load_data():
 
 def get_courses():
     """Fetch and randomize course information from a pickle file."""
-    path = f"{BASE_PATH}/data/processed/course_info_minified.pkl"
+    path = f"{BASE_PATH}/data/processed/course_info_minified_v2.pkl"
+    if not os.path.exists(path):
+        raise FileNotFoundError("Course data file not found.")
     courses_df = pd.read_pickle(path)
     return courses_df.sample(frac=1).reset_index(drop=True).set_index('id')
 
 
 def get_categories():
     path = f"{BASE_PATH}/data/processed/category.pkl"
+    if not os.path.exists(path):
+        raise FileNotFoundError("Category data file not found.")
     with open(path, 'rb') as f:
         categories = pickle.load(f)
     categories_df = pd.DataFrame(categories)
@@ -30,6 +34,8 @@ def get_categories():
 
 def get_sub_categories():
     path = f"{BASE_PATH}/data/processed/subcategory.pkl"
+    if not os.path.exists(path):
+        raise FileNotFoundError("Subcategory data file not found.")
     with open(path, 'rb') as f:
         subcategories = pickle.load(f)
     subcategories_df = pd.DataFrame(subcategories)
@@ -39,6 +45,8 @@ def get_sub_categories():
 
 def get_price_ranges():
     path = f"{BASE_PATH}/data/processed/id2price.pkl"
+    if not os.path.exists(path):
+        raise FileNotFoundError("Price data file not found.")
     with open(path, 'rb') as f:
         price = pickle.load(f)
     price_df = pd.DataFrame(price)
@@ -48,6 +56,8 @@ def get_price_ranges():
 
 def get_num_lectures_ranges():
     path = f"{BASE_PATH}/data/processed/id2num_lectures.pkl"
+    if not os.path.exists(path):
+        raise FileNotFoundError("Number of lectures data file not found.")
     with open(path, 'rb') as f:
         num_lectures = pickle.load(f)
     num_lectures_df = pd.DataFrame(num_lectures)
@@ -57,6 +67,8 @@ def get_num_lectures_ranges():
 
 def get_content_length_minutes_ranges():
     path = f"{BASE_PATH}/data/processed/id2content_length_min.pkl"
+    if not os.path.exists(path):
+        raise FileNotFoundError("Content length data file not found.")
     with open(path, 'rb') as f:
         content_length_min = pickle.load(f)
     content_length_min_df = pd.DataFrame(content_length_min)
@@ -68,6 +80,8 @@ def get_similarity_matrices():
     """Load all similarity matrices for categories and subcategories."""
     category_matrix_path = f"{BASE_PATH}/data/processed/category_similarity_matrix.npy"
     subcategory_matrix_path = f"{BASE_PATH}/data/processed/subcategory_similarity_matrix.npy"
+    if not os.path.exists(category_matrix_path) or not os.path.exists(subcategory_matrix_path):
+        raise FileNotFoundError("Similarity matrix files not found.")
     category_similarity_matrix = np.load(category_matrix_path)
     subcategory_similarity_matrix = np.load(subcategory_matrix_path)
     return category_similarity_matrix, subcategory_similarity_matrix
@@ -78,6 +92,8 @@ def get_bin2vec_mappings():
     price_path = f"{BASE_PATH}/data/processed/bins2price.pkl"
     num_lectures_path = f"{BASE_PATH}/data/processed/bins2num_lectures.pkl"
     content_length_path = f"{BASE_PATH}/data/processed/bins2content_length_min.pkl"
+    if not os.path.exists(price_path) or not os.path.exists(num_lectures_path) or not os.path.exists(content_length_path):
+        raise FileNotFoundError("Binary vector mappings not found.")
     with open(price_path, 'rb') as file:
         price_bin2vec = pickle.load(file)
     with open(num_lectures_path, 'rb') as file:
@@ -89,6 +105,8 @@ def get_bin2vec_mappings():
 # user id | item id | rating | timestamp
 def getRates():
     path = f"{BASE_PATH()}/data/processed/ratings.csv"
+    if not os.path.exists(path):
+        raise FileNotFoundError("Ratings data file not found.")
     df = pd.read_csv(path, delimiter=",", names=[
                      "userId", "courseId", "rating", "timestamp"])
     df = df.drop(columns='timestamp')

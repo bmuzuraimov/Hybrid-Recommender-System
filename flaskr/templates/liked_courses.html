@@ -1,38 +1,77 @@
-<section class="section pb-0">
-    <div class="container">
-        <p class="is-size-4 mb-3">
-            Liked <button class="button" @click="reloadPage"><i class="fa fa-refresh mr-3" aria-hidden="true"></i>Refresh</button>
-        </p>
-
-        <div class="columns is-mobile pb-3" style="overflow: scroll">
-            {% for course in likes %}
-            <div class="column is-2-fullhd is-2-desktop is-2-tablet is-6-mobile">
-                <div class="card">
-                    <div class="card-image">
-                        <figure class="image is-3by4">
-                            <img src="{{ course['cover_url'] }}"
-                                 onerror="this.src='https://placehold.co/480x640?text=No+Cover';"
-                                 alt="">
-                        </figure>
-                    </div>
-                    <div class="card-content p-2">
-                        <div class="media">
-                            <div class="media-content">
-                                <p style="font-size: 0.8rem; font-weight: bold">{{ course['title']
-                                    }}</p>
-                                <p style="font-size: 0.8rem">{{ course['year'] }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card-footer p-2">
-                        <button class="button is-small" @click="updateLike({{course['id']}})">
-                            <span :class="['fa fa-heart', inLikes({{course['id']}}) ? 'checked': '']" > Like</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
+<section class="pb-0 my-12">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="flex justify-between items-center mb-3">
+      <p class="text-xl font-semibold">Liked</p>
+      <button
+        class="flex items-center bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        @click="reloadPage"
+      >
+        <i class="fa fa-refresh mr-2" aria-hidden="true"></i>Refresh
+      </button>
     </div>
+    <div class="grid grid-cols-5 gap-4 pb-3">
+      <!-- Changed to grid layout -->
+      {% for course in likes %}
+      <div class="col-span-1">
+        <!-- Each card takes up one column -->
+        <div
+          class="bg-white rounded-lg overflow-hidden shadow h-full flex flex-col"
+        >
+          <div class="aspect-w-3 aspect-h-4 flex-grow">
+            <a
+              href="{{ 'https://www.udemy.com'+course['course_url'] }}"
+              target="_blank"
+            >
+              <img
+                class="object-cover w-full h-full"
+                src="{{ course['cover_url'] }}"
+                onerror="this.src='https://placehold.co/480x640?text=No+Cover';"
+                alt=""
+              />
+            </a>
+          </div>
+          <div class="p-2 flex flex-col justify-between flex-grow">
+            <p class="text-sm font-bold">{{ course['title'] }}</p>
+            <span
+              class="my-2 inline-flex items-center bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full"
+            >
+              <span class="w-2 h-2 mr-1 bg-green-500 rounded-full"></span>
+              {{ course['topic'] }}
+            </span>
+            <span
+              class="my-2 inline-flex items-center bg-yellow-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full"
+            >
+              <span class="w-2 h-2 me-1 bg-yellow-500 rounded-full"></span>
+              Avg. rating: {{ course['avg_rating'] }}
+            </span>
+            <span
+              class="my-2 inline-flex items-center bg-gray-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full"
+            >
+              <span class="w-2 h-2 me-1 bg-gray-500 rounded-full"></span>
+              # Lectures: {{ course['num_lectures'] }}
+            </span>
+            <span
+              class="my-2 inline-flex items-center bg-blue-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full"
+            >
+              <span class="w-2 h-2 me-1 bg-blue-500 rounded-full"></span>
+              ${{ course['price'] }}
+            </span>
+          </div>
+          <div class="p-2 text-center mt-auto">
+            <button
+              class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded"
+              @click="updateLike({{course['id']}})"
+            >
+              <span
+                :class="['fa fa-heart', inLikes({{course['id']}}) ? 'text-white' : 'text-gray-200']"
+              >
+                Liked</span
+              >
+            </button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
 </section>

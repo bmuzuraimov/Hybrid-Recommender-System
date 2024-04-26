@@ -1,45 +1,76 @@
-<div :class="['modal', showCourseRate ? 'is-active' : '']">
-    <div class="modal-background"></div>
-    <div class="modal-card" style="max-width: 1000px">
-        <header class="modal-card-head">
-            <p class="modal-card-title">Please rate the following courses.</p>
-        </header>
-        <div class="modal-card-body">
-            <div class="columns is-mobile is-multiline">
-                {% for course in default_category_courses %}
-                <div class="column is-3-fullhd is-3-desktop is-3-tablet is-6-mobile">
-                    <div class="card">
-                        <div class="card-image">
-                            <figure class="image is-3by4">
-                                <img src="{{ course['cover_url'] }}"
-                                     onerror="this.src='https://placehold.co/480x640?text=No+Cover';" alt="">
-                            </figure>
-                        </div>
-                        <div class="card-content p-2">
-                            <div class="media">
-                                <div class="media-content">
-                                    <p style="font-size: 0.8rem; font-weight: bold">{{ course['title']
-                                        }}</p>
-                                    <p style="font-size: 0.8rem">{{ course['year'] }}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card-footer p-2">
-                            <template v-for="rate in [1, 2, 3, 4, 5]">
-                                <span :class="['fa fa-star px-1 star', getRate({{course['id']}})[1] >= rate ? 'checked': '']"
-                                      @click="updateRate({{course['id']}}, rate)"></span>
-                            </template>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
+<div
+  :class="{'overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-40 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full': true, 'block': showCourseRate, 'hidden': !showCourseRate}"
+>
+  <div
+    class="relative z-50 bg-white rounded overflow-y-auto shadow-lg mx-auto"
+    style="max-width: 1000px; width: full"
+  >
+    <header class="bg-gray-200 p-4">
+      <p class="text-lg font-semibold">Please rate the following courses.</p>
+    </header>
+    <div class="p-4">
+      <div class="grid grid-cols-4 gap-4 overflow-y-auto overflow-x-hidden">
+        {% for course in default_category_courses %}
+        <div class="col-span-1">
+          <div class="bg-white rounded shadow h-full flex flex-col">
+            <div class="aspect-w-3 aspect-h-4">
+              <img
+                class="object-cover"
+                src="{{ course['cover_url'] }}"
+                onerror="this.src='https://placehold.co/480x640?text=No+Cover';"
+                alt=""
+              />
             </div>
+            <div class="p-2 flex-grow">
+              <p class="text-sm font-bold">{{ course['title'] }}</p>
+              <span
+                class="my-2 inline-flex items-center bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full"
+              >
+                <span class="w-2 h-2 me-1 bg-green-500 rounded-full"></span>
+                {{ course['topic'] }}
+              </span>
+              <span
+                class="my-2 inline-flex items-center bg-yellow-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full"
+              >
+                <span class="w-2 h-2 me-1 bg-yellow-500 rounded-full"></span>
+                Avg. rating: {{ course['avg_rating'] }}
+              </span>
+              <span
+                class="my-2 inline-flex items-center bg-gray-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full"
+              >
+                <span class="w-2 h-2 me-1 bg-gray-500 rounded-full"></span>
+                # Lectures: {{ course['num_lectures'] }}
+              </span>
+              <span
+                class="my-2 inline-flex items-center bg-blue-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full"
+              >
+                <span class="w-2 h-2 me-1 bg-blue-500 rounded-full"></span>
+                ${{ course['price'] }}
+              </span>
+            </div>
+
+            <div class="p-2 flex justify-between items-end">
+              <template v-for="rate in [1, 2, 3, 4, 5]">
+                <span
+                  :class="['fa fa-star', getRate({{course['id']}})[1] >= rate ? 'text-yellow-400' : 'text-gray-400']"
+                  @click="updateRate({{course['id']}}, rate)"
+                ></span>
+              </template>
+            </div>
+          </div>
         </div>
-        <footer class="modal-card-foot">
-            <button class="button is-link" :disabled="userRates.length == 0"
-                    @click="showCourseRate = false; reloadPage()">Save
-            </button>
-        </footer>
+        {% endfor %}
+      </div>
     </div>
+    <footer class="bg-gray-200 p-4 flex justify-end">
+      <button
+        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        :disabled="userRates.length == 0"
+        @click="showCourseRate = false; reloadPage()"
+      >
+        Save
+      </button>
+    </footer>
+  </div>
+  <div class="fixed inset-0 bg-gray-800 opacity-75"></div>
 </div>

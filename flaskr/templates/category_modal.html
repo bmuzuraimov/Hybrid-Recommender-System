@@ -1,48 +1,91 @@
-<div :class="['modal', showCategory ? 'is-active' : '']">
-    <div class="modal-background"></div>
-    <div class="modal-card overflow-scroll">
-        <header class="modal-card-head">
-            <p class="modal-card-title">Please choose any category you're interested in.</p>
-        </header>
-        <div class="modal-card-body">
-            <p class="mb-3">Multiple answers are possible.</p>
-            {% for categor in category %}
-            <button :class="['button m-2', inCategory({{categor['id']}}) ? 'is-link' : '' ]" value="{{categor['id']}}"
-                    @click="updateCategory({{categor['id']}})">
+<div
+  :class="['fixed inset-0 z-40', showCategory ? 'flex' : 'hidden']"
+  aria-labelledby="modal-title"
+  role="dialog"
+  aria-modal="true"
+>
+  <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+  <div
+    class="relative bg-white rounded-lg text-left overflow-y-auto shadow-xl transform transition-all sm:my-8 sm:mx-auto max-w-lg w-full"
+  >
+    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+      <div class="sm:flex sm:items-start">
+        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+          <h3
+            class="text-lg leading-6 font-medium text-gray-900"
+            id="modal-title"
+          >
+            Please choose any category you're interested in.
+          </h3>
+          <div class="mt-2">
+            <p class="text-sm text-orange-500">Categories:</p>
+            <div class="flex flex-wrap gap-2 justify-center">
+              {% for categor in category %}
+              <button
+                :class="['mt-2 inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium sm:text-sm', inCategory({{categor['id']}}) ? 'bg-blue-600 text-white' : 'bg-gray-200' ]"
+                value="{{categor['id']}}"
+                @click="updateCategory({{categor['id']}})"
+              >
                 {{categor['name']}}
-            </button>
-            {% endfor %}
-        </div>
-        <div class="modal-card-body">
-            <p class="mb-3">Subcategories:</p>
-            {% for subcategor in subcategory %}
-            <button :class="['button m-2', inSubCategory({{subcategor['id']}}) ? 'is-link' : '' ]" value="{{subcategor['id']}}"
-                    @click="updateSubCategory({{subcategor['id']}})">
+              </button>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="mt-2">
+            <p class="text-sm text-orange-500">Subcategories:</p>
+            <div class="flex flex-wrap gap-2 justify-center">
+              {% for subcategor in subcategory %}
+              <button
+                :class="['mt-2 inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium sm:text-sm', inSubCategory({{subcategor['id']}}) ? 'bg-blue-600 text-white' : 'bg-gray-200' ]"
+                value="{{subcategor['id']}}"
+                @click="updateSubCategory({{subcategor['id']}})"
+              >
                 {{subcategor['name']}}
-            </button>
-            {% endfor %}
+              </button>
+              {% endfor %}
+            </div>
+          </div>
+          <!-- <div class="mt-2">
+            <p class="text-sm text-gray-500">Price range:</p>
+            <div class="flex flex-wrap gap-2 justify-center">
+              {% for price_range in price_ranges %}
+              <button
+                :class="['mt-2 inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium sm:text-sm', inPriceRange({{price_range['id']}}) ? 'bg-blue-600 text-white' : 'bg-gray-200' ]"
+                value="{{price_range['id']}}"
+                @click="updatePriceRange({{price_range['id']}})"
+              >
+                ${{price_range['name'].replace('(', '').replace(']',
+                '').replace(',', ' - ').replace('-0.001', '0')}}
+              </button>
+              {% endfor %}
+            </div>
+          </div> -->
+          <!-- <div class="mt-2">
+            <p class="text-sm text-gray-500"># of Lectures</p>
+            <div class="flex flex-wrap gap-2 justify-center">
+              {% for num_lectures_range in num_lectures_ranges %}
+              <button
+                :class="['mt-2 inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium sm:text-sm', inNumLecturesRange({{num_lectures_range['id']}}) ? 'bg-blue-600 text-white' : 'bg-gray-200' ]"
+                value="{{num_lectures_range['id']}}"
+                @click="updateNumLecturesRange({{num_lectures_range['id']}})"
+              >
+                {{num_lectures_range['name'].replace('(', '').replace(']',
+                '').replace(',', ' - ').replace('-0.001', '0')}}
+              </button>
+              {% endfor %}
+            </div>
+          </div> -->
         </div>
-        <div class="modal-card-body">
-            <p class="mb-3">Price range:</p>
-            {% for price_range in price_ranges %}
-            <button :class="['button m-2', inPriceRange({{price_range['id']}}) ? 'is-link' : '' ]" value="{{price_range['id']}}"
-                    @click="updatePriceRange({{price_range['id']}})">
-                {{price_range['name'].replace('(', '').replace(']', '').replace(',', ' - ')}}
-            </button>
-            {% endfor %}
-        </div>
-        <div class="modal-card-body">
-            <p class="mb-3"># of Lectures</p>
-            {% for num_lectures_range in num_lectures_ranges %}
-            <button :class="['button m-2', inNumLecturesRange({{num_lectures_range['id']}}) ? 'is-link' : '' ]" value="{{num_lectures_range['id']}}"
-                    @click="updateNumLecturesRange({{num_lectures_range['id']}})">
-                {{num_lectures_range['name'].replace('(', '').replace(']', '').replace(',', ' - ')}}
-            </button>
-            {% endfor %}
-        </div>
-        <footer class="modal-card-foot">
-            <button class="button is-link" :disabled="category.length == 0" @click="saveCategory">Save
-            </button>
-        </footer>
+      </div>
     </div>
+    <div class="bg-gray-50 px-4 py-3 flex justify-center">
+      <button
+        :class="['w-full sm:w-64 inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white', (category.length == 0 && subcategory.length == 0) ? 'bg-gray-600' : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500']"
+        :disabled="category.length == 0 && subcategory.length == 0"
+        @click="savePreference"
+      >
+        Save
+      </button>
+    </div>
+  </div>
 </div>

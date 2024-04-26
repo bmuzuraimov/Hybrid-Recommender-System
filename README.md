@@ -1,21 +1,20 @@
-# Lab3
+# COMP4135 Recommender System for Udemy Courses
 
 ## Create an environment (only for Mac and Linux)
 
 ```
-python3 -m venv .venv
+python3 -m venv venv
 ```
 
 ## Activate the environment (only for Mac and Linux)
 
 ```
-. .venv/bin/activate
+source venv/bin/activate
 ```
 
 ## Install Python packages 
 
 ```
-pip install --upgrade pip setuptools wheel pyquery
 pip install -r requirements.txt
 ```
 
@@ -24,8 +23,5 @@ pip install -r requirements.txt
 flask --app flaskr run --debug
 ```
 
-## Add the recommendation algorithm
-You only need to modify the `main.py` file. Its path is as follows:
-```
-path: /flaskr/main.py
-```
+- **Author**: MUZURAIMOV Baiel
+- **Dataset Source**: [Kaggle](https://www.kaggle.com/datasets/hossaingh/udemy-courses)
